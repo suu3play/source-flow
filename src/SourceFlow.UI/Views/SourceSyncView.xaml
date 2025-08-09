@@ -1,0 +1,271 @@
+<UserControl x:Class="SourceFlow.UI.Views.SourceSyncView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:converters="clr-namespace:SourceFlow.UI.Converters"
+             xmlns:core="clr-namespace:SourceFlow.Core.Enums;assembly=SourceFlow.Core"
+             mc:Ignorable="d" 
+             d:DesignHeight="700" d:DesignWidth="1000">
+    
+    <UserControl.Resources>
+        <converters:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+    </UserControl.Resources>
+    
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- ヘッダー -->
+        <StackPanel Grid.Row="0" Margin="10">
+            <TextBlock Text="ソース取得" FontSize="24" FontWeight="Bold" Margin="0,0,0,5"/>
+            <TextBlock Text="サーバまたはローカルパスからファイルを同期します" FontSize="14" Foreground="Gray"/>
+        </StackPanel>
+
+        <!-- メインコンテンツ -->
+        <Grid Grid.Row="1" Margin="10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="2*"/>
+                <ColumnDefinition Width="10"/>
+                <ColumnDefinition Width="3*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- 左側: ソース一覧 -->
+            <GroupBox Grid.Column="0" Header="ソース一覧" Margin="0,0,0,0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- ツールバー -->
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="5">
+                        <Button Content="新規追加" Command="{Binding AddSourceCommand}" 
+                                Width="70" Height="25" Margin="0,0,5,0"/>
+                        <Button Content="編集" Command="{Binding EditSourceCommand}" 
+                                CommandParameter="{Binding SelectedSource}"
+                                Width="50" Height="25" Margin="0,0,5,0"/>
+                        <Button Content="削除" Command="{Binding DeleteSourceCommand}" 
+                                CommandParameter="{Binding SelectedSource}"
+                                Width="50" Height="25" Margin="0,0,5,0"/>
+                        <Button Content="同期" Command="{Binding StartSyncCommand}" 
+                                CommandParameter="{Binding SelectedSource}"
+                                Width="50" Height="25" Margin="5,0,0,0"/>
+                    </StackPanel>
+
+                    <!-- ソース一覧 -->
+                    <ListView Grid.Row="1" ItemsSource="{Binding Sources}" 
+                              SelectedItem="{Binding SelectedSource}" Margin="5">
+                        <ListView.View>
+                            <GridView>
+                                <GridViewColumn Header="名前" Width="100">
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding Name}" TextWrapping="Wrap"/>
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
+                                </GridViewColumn>
+                                <GridViewColumn Header="種類" Width="60">
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding SourceType}"/>
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
+                                </GridViewColumn>
+                                <GridViewColumn Header="有効" Width="40">
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <CheckBox IsChecked="{Binding Enabled}" IsEnabled="False"/>
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
+                                </GridViewColumn>
+                            </GridView>
+                        </ListView.View>
+                    </ListView>
+
+                    <!-- 一括操作 -->
+                    <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="5">
+                        <Button Content="全て同期" Command="{Binding StartAllSyncCommand}" 
+                                Width="70" Height="30" Margin="0,0,10,0"/>
+                        <Button Content="同期停止" Command="{Binding StopSyncCommand}" 
+                                Width="70" Height="30"/>
+                    </StackPanel>
+                </Grid>
+            </GroupBox>
+
+            <!-- 右側: 編集・詳細表示 -->
+            <GroupBox Grid.Column="2">
+                <GroupBox.Header>
+                    <TextBlock>
+                        <TextBlock.Text>
+                            <Binding Path="IsEditMode">
+                                <Binding.Converter>
+                                    <converters:BooleanToStringConverter TrueValue="ソース編集" FalseValue="ソース詳細"/>
+                                </Binding.Converter>
+                            </Binding>
+                        </TextBlock.Text>
+                    </TextBlock>
+                </GroupBox.Header>
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="10" IsEnabled="{Binding IsEditMode}">
+                        
+                        <!-- 基本設定 -->
+                        <GroupBox Header="基本設定" Margin="0,0,0,10">
+                            <Grid Margin="5">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="80"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="名前:" VerticalAlignment="Center" Margin="0,0,5,5"/>
+                                <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding EditingName}" Margin="0,0,0,5"/>
+
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="種類:" VerticalAlignment="Center" Margin="0,0,5,5"/>
+                                <ComboBox Grid.Row="1" Grid.Column="1" SelectedItem="{Binding EditingSourceType}" Margin="0,0,0,5">
+                                    <ComboBox.Items>
+                                        <core:SourceType>Local</core:SourceType>
+                                        <core:SourceType>Remote</core:SourceType>
+                                    </ComboBox.Items>
+                                </ComboBox>
+
+                                <TextBlock Grid.Row="2" Grid.Column="0" Text="スケジュール:" VerticalAlignment="Center" Margin="0,0,5,5"/>
+                                <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding EditingSchedule}" Margin="0,0,0,5"/>
+
+                                <CheckBox Grid.Row="3" Grid.Column="1" Content="有効" IsChecked="{Binding EditingEnabled}" Margin="0,0,0,10"/>
+                            </Grid>
+                        </GroupBox>
+
+                        <!-- パス設定 -->
+                        <GroupBox Header="パス設定" Margin="0,0,0,10">
+                            <Grid Margin="5">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="80"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="ソース:" VerticalAlignment="Center" Margin="0,0,5,5"/>
+                                <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding EditingSourcePath}" Margin="0,0,5,5"/>
+                                <Button Grid.Row="0" Grid.Column="2" Content="参照" Command="{Binding BrowseFolderCommand}" 
+                                        CommandParameter="source" Width="50" Height="25" Margin="0,0,0,5"/>
+
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="ローカル:" VerticalAlignment="Center" Margin="0,0,5,5"/>
+                                <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding EditingLocalPath}" Margin="0,0,5,5"/>
+                                <Button Grid.Row="1" Grid.Column="2" Content="参照" Command="{Binding BrowseFolderCommand}" 
+                                        CommandParameter="local" Width="50" Height="25" Margin="0,0,0,5"/>
+                            </Grid>
+                        </GroupBox>
+
+                        <!-- リモート接続設定 -->
+                        <GroupBox Header="リモート接続設定" Margin="0,0,0,10" 
+                                  Visibility="{Binding IsRemoteSource, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <Grid Margin="5">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="80"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="80"/>
+                                    <ColumnDefinition Width="80"/>
+                                </Grid.ColumnDefinitions>
+
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="プロトコル:" VerticalAlignment="Center" Margin="0,0,5,5"/>
+                                <ComboBox Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="3" ItemsSource="{Binding ProtocolOptions}" 
+                                          SelectedItem="{Binding EditingProtocol}" Margin="0,0,0,5"/>
+
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="ホスト:" VerticalAlignment="Center" Margin="0,0,5,5"/>
+                                <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding EditingHost}" Margin="0,0,5,5"/>
+                                <TextBlock Grid.Row="1" Grid.Column="2" Text="ポート:" VerticalAlignment="Center" Margin="0,0,5,5"/>
+                                <TextBox Grid.Row="1" Grid.Column="3" Text="{Binding EditingPort}" Margin="0,0,0,5"/>
+
+                                <TextBlock Grid.Row="2" Grid.Column="0" Text="ユーザー:" VerticalAlignment="Center" Margin="0,0,5,5"/>
+                                <TextBox Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="3" Text="{Binding EditingUsername}" Margin="0,0,0,5"/>
+
+                                <TextBlock Grid.Row="3" Grid.Column="0" Text="パスワード:" VerticalAlignment="Center" Margin="0,0,5,5"/>
+                                <TextBox Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="3" Text="{Binding EditingPassword}" Margin="0,0,0,5"/>
+
+                                <Button Grid.Row="4" Grid.Column="1" Content="接続テスト" Command="{Binding TestConnectionCommand}" 
+                                        Width="80" Height="25" Margin="0,5,0,0"/>
+                            </Grid>
+                        </GroupBox>
+
+                        <!-- 除外パターン -->
+                        <GroupBox Header="除外パターン" Margin="0,0,0,10">
+                            <Grid Margin="5">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="*"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <ListBox Grid.Row="0" ItemsSource="{Binding ExcludePatterns}" Height="80" Margin="0,0,0,5">
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding}"/>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+
+                                <StackPanel Grid.Row="1" Orientation="Horizontal">
+                                    <Button Content="追加" Command="{Binding AddExcludePatternCommand}" 
+                                            Width="50" Height="25" Margin="0,0,5,0"/>
+                                    <Button Content="削除" Command="{Binding RemoveExcludePatternCommand}" 
+                                            Width="50" Height="25"/>
+                                </StackPanel>
+                            </Grid>
+                        </GroupBox>
+
+                        <!-- 操作ボタン -->
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0"
+                                    Visibility="{Binding IsEditMode, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <Button Content="保存" Command="{Binding SaveSourceCommand}" 
+                                    Width="60" Height="30" Margin="0,0,10,0"/>
+                            <Button Content="キャンセル" Command="{Binding CancelEditCommand}" 
+                                    Width="60" Height="30"/>
+                        </StackPanel>
+                    </StackPanel>
+                </ScrollViewer>
+            </GroupBox>
+        </Grid>
+
+        <!-- ステータス・進捗表示 -->
+        <Border Grid.Row="2" Background="LightGray" Padding="10">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" Orientation="Horizontal">
+                    <TextBlock Text="状態: " FontWeight="Bold"/>
+                    <TextBlock Text="{Binding StatusMessage}"/>
+                </StackPanel>
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal" 
+                            Visibility="{Binding IsSyncing, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <ProgressBar Value="{Binding SyncProgress}" Width="150" Height="16" Margin="0,0,10,0"/>
+                    <TextBlock Text="{Binding SyncProgressText}" FontSize="12"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

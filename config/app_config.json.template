@@ -1,0 +1,22 @@
+{
+  "database": {
+    "path": "data\\history.db",
+    "backup_enabled": true,
+    "backup_interval_days": 7
+  },
+  "logging": {
+    "level": "Info",
+    "max_file_size_mb": 10,
+    "max_files": 5,
+    "log_directory": "logs"
+  },
+  "ui": {
+    "theme": "Light",
+    "auto_refresh_interval": 30,
+    "max_history_display": 100
+  },
+  "external_tools": {
+    "winmerge_path": "C:\\Program Files (x86)\\WinMerge\\WinMergeU.exe",
+    "text_editor": "notepad.exe"
+  }
+}

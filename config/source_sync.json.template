@@ -1,0 +1,54 @@
+{
+  "sources": [
+    {
+      "name": "開発サーバ（リモート）",
+      "source_type": "remote",
+      "protocol": "SFTP",
+      "host": "dev-server.company.com",
+      "port": 22,
+      "username": "devuser",
+      "password_encrypted": "",
+      "source_path": "/var/www/source",
+      "local_path": "C:\\LocalSync\\dev",
+      "schedule": "0 */2 * * *",
+      "exclude_patterns": [
+        "*.tmp",
+        "node_modules/",
+        ".git/"
+      ],
+      "enabled": true
+    },
+    {
+      "name": "ローカル開発環境",
+      "source_type": "local",
+      "source_path": "D:\\Development\\MyProject",
+      "local_path": "C:\\LocalSync\\local_dev",
+      "schedule": "0 */1 * * *",
+      "exclude_patterns": [
+        "bin/",
+        "obj/",
+        "*.user"
+      ],
+      "enabled": false
+    },
+    {
+      "name": "共有フォルダ（UNCパス）",
+      "source_type": "local",
+      "source_path": "\\\\file-server\\shared\\source",
+      "local_path": "C:\\LocalSync\\shared",
+      "schedule": "0 0 * * *",
+      "exclude_patterns": [
+        "~$*",
+        "*.lock"
+      ],
+      "enabled": false
+    }
+  ],
+  "sync_options": {
+    "timeout_seconds": 300,
+    "retry_count": 3,
+    "preserve_permissions": false,
+    "verify_checksum": true,
+    "local_access_timeout": 30
+  }
+}
