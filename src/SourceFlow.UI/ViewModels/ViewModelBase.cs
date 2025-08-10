@@ -3,7 +3,7 @@ using System.Runtime.CompilerServices;
 
 namespace SourceFlow.UI.ViewModels;
 
-public abstract class ViewModelBase : INotifyPropertyChanged
+public abstract class ViewModelBase : INotifyPropertyChanged, IDisposable
 {
     public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -20,5 +20,10 @@ public abstract class ViewModelBase : INotifyPropertyChanged
         field = value;
         OnPropertyChanged(propertyName);
         return true;
+    }
+
+    public virtual void Dispose()
+    {
+        // 基底クラスでは何もしない
     }
 }

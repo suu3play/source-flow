@@ -16,6 +16,7 @@ public class FileManagerViewModel : ViewModelBase
     private readonly ILogger _logger = LogManager.GetCurrentClassLogger();
     private readonly IConfigurationService _configurationService;
     private readonly IComparisonService _comparisonService;
+    private readonly CancellationTokenSource _cancellationTokenSource = new();
     
     private string _currentPath = "";
     private DirectoryItem? _selectedDirectory;
@@ -51,7 +52,7 @@ public class FileManagerViewModel : ViewModelBase
         {
             if (SetProperty(ref _selectedDirectory, value))
             {
-                _ = LoadFilesAsync(value?.FullPath ?? "");
+                _ = LoadFilesSafeAsync(value?.FullPath ?? "");
             }
         }
     }
@@ -80,9 +81,9 @@ public class FileManagerViewModel : ViewModelBase
 
     private void InitializeCommands()
     {
-        RefreshCommand = new RelayCommand(() => _ = RefreshAsync());
+        RefreshCommand = new RelayCommand(() => _ = RefreshSafeAsync());
         NavigateUpCommand = new RelayCommand(NavigateUp, CanNavigateUp);
-        OpenFolderCommand = new RelayCommand(() => _ = OpenFolderAsync());
+        OpenFolderCommand = new RelayCommand(() => _ = OpenFolderSafeAsync());
     }
 
     private async void InitializeAsync()
@@ -286,7 +287,7 @@ public class FileManagerViewModel : ViewModelBase
                 var parentPath = Directory.GetParent(CurrentPath)?.FullName;
                 if (!string.IsNullOrEmpty(parentPath))
                 {
-                    _ = LoadFilesAsync(parentPath);
+                    _ = LoadFilesSafeAsync(parentPath);
                 }
             }
         }
@@ -317,6 +318,70 @@ public class FileManagerViewModel : ViewModelBase
             _logger.Error(ex, "フォルダを開くことができませんでした");
             StatusMessage = "フォルダを開くことができませんでした";
         }
+    }
+
+    private async Task LoadFilesSafeAsync(string path)
+    {
+        try
+        {
+            await LoadFilesAsync(path).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException)
+        {
+            // キャンセルは正常な動作
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "ファイル読み込みエラー: {Path}", path);
+        }
+    }
+
+    private async Task RefreshSafeAsync()
+    {
+        try
+        {
+            await RefreshAsync().ConfigureAwait(false);
+        }
+        catch (OperationCanceledException)
+        {
+            // キャンセルは正常な動作
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "更新処理エラー");
+        }
+    }
+
+    private async Task OpenFolderSafeAsync()
+    {
+        try
+        {
+            await OpenFolderAsync().ConfigureAwait(false);
+        }
+        catch (OperationCanceledException)
+        {
+            // キャンセルは正常な動作
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "フォルダオープンエラー");
+        }
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            _cancellationTokenSource?.Cancel();
+            _cancellationTokenSource?.Dispose();
+        }
+    }
+
+    public override void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+        base.Dispose();
     }
 }
 
