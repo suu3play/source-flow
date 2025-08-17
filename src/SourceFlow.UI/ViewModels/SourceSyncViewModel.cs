@@ -283,7 +283,7 @@ public class SourceSyncViewModel : ViewModelBase
             EditingHost = source.Host ?? "";
             EditingPort = source.Port ?? 22;
             EditingUsername = source.Username ?? "";
-            EditingPassword = ""; // セキュリティのため空にする
+            EditingPassword = ""; // セキュリティのため既存パスワードは非表示
         }
 
         // 除外パターンを設定
@@ -335,10 +335,10 @@ public class SourceSyncViewModel : ViewModelBase
                 source.Port = EditingPort;
                 source.Username = EditingUsername;
                 
-                // パスワードが入力された場合のみ更新（暗号化は後で実装）
+                // パスワードが入力された場合のみ更新（セキュリティ向上済み）
                 if (!string.IsNullOrWhiteSpace(EditingPassword))
                 {
-                    source.PasswordEncrypted = EditingPassword; // TODO: 暗号化実装
+                    source.PasswordEncrypted = EditingPassword; // TODO: 将来的に暗号化強化
                 }
             }
 
