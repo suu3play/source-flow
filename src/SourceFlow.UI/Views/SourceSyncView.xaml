@@ -4,6 +4,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:converters="clr-namespace:SourceFlow.UI.Converters"
+             xmlns:helpers="clr-namespace:SourceFlow.UI.Helpers"
              xmlns:core="clr-namespace:SourceFlow.Core.Enums;assembly=SourceFlow.Core"
              mc:Ignorable="d" 
              d:DesignHeight="700" d:DesignWidth="1000">
@@ -202,7 +203,10 @@
                                 <TextBox Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="3" Text="{Binding EditingUsername}" Margin="0,0,0,5"/>
 
                                 <TextBlock Grid.Row="3" Grid.Column="0" Text="パスワード:" VerticalAlignment="Center" Margin="0,0,5,5"/>
-                                <TextBox Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="3" Text="{Binding EditingPassword}" Margin="0,0,0,5"/>
+                                <PasswordBox Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="3" 
+                                             helpers:PasswordBoxHelper.BindPassword="True"
+                                             helpers:PasswordBoxHelper.BoundPassword="{Binding EditingPassword}" 
+                                             Margin="0,0,0,5"/>
 
                                 <Button Grid.Row="4" Grid.Column="1" Content="接続テスト" Command="{Binding TestConnectionCommand}" 
                                         Width="80" Height="25" Margin="0,5,0,0"/>
