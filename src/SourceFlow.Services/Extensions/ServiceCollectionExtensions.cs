@@ -25,8 +25,13 @@ public static class ServiceCollectionExtensions
         
         // Diff services
         services.AddScoped<ITextDiffEngine, TextDiffEngine>();
+        services.AddScoped<IAdvancedDiffEngine, AdvancedDiffEngine>();
         services.AddScoped<ISyntaxHighlightingService, SyntaxHighlightingService>();
-        services.AddScoped<IDiffViewService, DiffViewService>();
+        services.AddScoped<IDiffCacheService, DiffCacheService>();
+        services.AddScoped<IPerformanceMonitorService, PerformanceMonitorService>();
+        
+        // 最適化されたサービス（標準サービスを置き換え）
+        services.AddScoped<IDiffViewService, OptimizedDiffViewService>();
         
         return services;
     }
