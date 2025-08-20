@@ -35,6 +35,7 @@
                 <MenuItem Header="ソース取得" InputGestureText="Ctrl+2" Click="NavigateToTab" Tag="1"/>
                 <MenuItem Header="ファイル管理" InputGestureText="Ctrl+3" Click="NavigateToTab" Tag="2"/>
                 <MenuItem Header="比較・リリース" InputGestureText="Ctrl+4" Click="NavigateToTab" Tag="3"/>
+                <MenuItem Header="ファイル差分" InputGestureText="Ctrl+D" Click="NavigateToTab" Tag="5"/>
                 <MenuItem Header="設定" InputGestureText="Ctrl+5" Click="NavigateToTab" Tag="4"/>
             </MenuItem>
             <MenuItem Header="ヘルプ(_H)">
@@ -62,6 +63,10 @@
             
             <TabItem Header="設定">
                 <views:SettingsView DataContext="{Binding SettingsViewModel}"/>
+            </TabItem>
+            
+            <TabItem Header="ファイル差分">
+                <views:FileDiffView DataContext="{Binding FileDiffViewModel}"/>
             </TabItem>
         </TabControl>
 

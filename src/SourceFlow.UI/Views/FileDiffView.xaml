@@ -1,0 +1,263 @@
+<UserControl x:Class="SourceFlow.UI.Views.FileDiffView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:avalonedit="http://icsharpcode.net/sharpdevelop/avalonedit"
+             xmlns:local="clr-namespace:SourceFlow.UI.Views"
+             xmlns:viewmodels="clr-namespace:SourceFlow.UI.ViewModels"
+             mc:Ignorable="d" 
+             d:DesignHeight="600" d:DesignWidth="1000"
+             d:DataContext="{d:DesignInstance Type=viewmodels:FileDiffViewModel}">
+    
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+        
+        <Style x:Key="DiffToolbarButtonStyle" TargetType="Button">
+            <Setter Property="Margin" Value="5,0"/>
+            <Setter Property="Padding" Value="10,5"/>
+            <Setter Property="MinWidth" Value="80"/>
+        </Style>
+        
+        <Style x:Key="DiffStatusStyle" TargetType="Border">
+            <Setter Property="Padding" Value="5"/>
+            <Setter Property="Background" Value="#F0F0F0"/>
+            <Setter Property="BorderBrush" Value="#CCCCCC"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/> <!-- Toolbar -->
+            <RowDefinition Height="*"/>    <!-- Content -->
+            <RowDefinition Height="Auto"/> <!-- Status Bar -->
+        </Grid.RowDefinitions>
+
+        <!-- Toolbar -->
+        <Border Grid.Row="0" Background="#F8F9FA" BorderBrush="#DEE2E6" BorderThickness="0,0,0,1" Padding="10">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Left side controls -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal">
+                    <ComboBox Name="ViewModeComboBox" 
+                              ItemsSource="{Binding AvailableViewModes}"
+                              SelectedItem="{Binding ViewMode}"
+                              Width="120" Margin="0,0,10,0"
+                              ToolTip="表示モード"/>
+                    
+                    <CheckBox IsChecked="{Binding ShowLineNumbers}" 
+                              Content="行番号" Margin="0,0,15,0"
+                              VerticalAlignment="Center"/>
+                    
+                    <CheckBox IsChecked="{Binding ShowWhitespace}" 
+                              Content="空白文字" Margin="0,0,15,0"
+                              VerticalAlignment="Center"/>
+                </StackPanel>
+
+                <!-- Search controls -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center">
+                    <TextBox Name="SearchTextBox" 
+                             Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                             Width="200" Margin="5,0"
+                             ToolTip="検索テキスト"/>
+                    
+                    <CheckBox IsChecked="{Binding IsCaseSensitive}" 
+                              Content="大文字小文字を区別" 
+                              VerticalAlignment="Center" Margin="5,0"/>
+                    
+                    <Button Content="検索" 
+                            Command="{Binding SearchCommand}"
+                            Style="{StaticResource DiffToolbarButtonStyle}"/>
+                    
+                    <Button Content="前へ" 
+                            Command="{Binding PreviousSearchResultCommand}"
+                            Style="{StaticResource DiffToolbarButtonStyle}"/>
+                    
+                    <Button Content="次へ" 
+                            Command="{Binding NextSearchResultCommand}"
+                            Style="{StaticResource DiffToolbarButtonStyle}"/>
+                    
+                    <TextBlock Text="{Binding SearchResultsText}" 
+                               VerticalAlignment="Center" 
+                               Margin="10,0,0,0"
+                               FontWeight="Bold"/>
+                </StackPanel>
+
+                <!-- Right side controls -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal">
+                    <Button Content="更新" 
+                            Command="{Binding RefreshCommand}"
+                            Style="{StaticResource DiffToolbarButtonStyle}"/>
+                    
+                    <Button Content="エクスポート" 
+                            Click="ExportButton_Click"
+                            Style="{StaticResource DiffToolbarButtonStyle}"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Content Area -->
+        <Grid Grid.Row="1">
+            <!-- Loading Overlay -->
+            <Border Background="#80FFFFFF" 
+                    Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}"
+                    Panel.ZIndex="100">
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <ProgressBar IsIndeterminate="True" Width="200" Height="20" Margin="10"/>
+                    <TextBlock Text="読み込み中..." HorizontalAlignment="Center" FontSize="14" FontWeight="Bold"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Main Content -->
+            <TabControl Name="DiffTabControl">
+                <!-- Side-by-Side View -->
+                <TabItem Header="サイドバイサイド" Visibility="{Binding ViewMode, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <Grid Name="SideBySideGrid">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="5"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Left File -->
+                        <Grid Grid.Column="0">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            
+                            <Border Grid.Row="0" Background="#E9ECEF" Padding="8,4" BorderBrush="#CED4DA" BorderThickness="0,0,0,1">
+                                <TextBlock Text="{Binding LeftFilePath}" FontWeight="Bold" FontSize="12"/>
+                            </Border>
+                            
+                            <Border Grid.Row="1" BorderBrush="#DEE2E6" BorderThickness="1">
+                                <avalonedit:TextEditor Name="LeftTextEditor"
+                                                       FontFamily="Consolas"
+                                                       FontSize="12"
+                                                       IsReadOnly="True"
+                                                       ShowLineNumbers="{Binding ShowLineNumbers}"
+                                                       WordWrap="False"
+                                                       VerticalScrollBarVisibility="Auto"
+                                                       HorizontalScrollBarVisibility="Auto"/>
+                            </Border>
+                        </Grid>
+
+                        <!-- Splitter -->
+                        <GridSplitter Grid.Column="1" 
+                                      HorizontalAlignment="Stretch" 
+                                      Background="#CED4DA"/>
+
+                        <!-- Right File -->
+                        <Grid Grid.Column="2">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            
+                            <Border Grid.Row="0" Background="#E9ECEF" Padding="8,4" BorderBrush="#CED4DA" BorderThickness="0,0,0,1">
+                                <TextBlock Text="{Binding RightFilePath}" FontWeight="Bold" FontSize="12"/>
+                            </Border>
+                            
+                            <Border Grid.Row="1" BorderBrush="#DEE2E6" BorderThickness="1">
+                                <avalonedit:TextEditor Name="RightTextEditor"
+                                                       FontFamily="Consolas"
+                                                       FontSize="12"
+                                                       IsReadOnly="True"
+                                                       ShowLineNumbers="{Binding ShowLineNumbers}"
+                                                       WordWrap="False"
+                                                       VerticalScrollBarVisibility="Auto"
+                                                       HorizontalScrollBarVisibility="Auto"/>
+                            </Border>
+                        </Grid>
+                    </Grid>
+                </TabItem>
+
+                <!-- Inline View -->
+                <TabItem Header="インライン">
+                    <Grid Name="InlineGrid">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        
+                        <Border Grid.Row="0" Background="#E9ECEF" Padding="8,4" BorderBrush="#CED4DA" BorderThickness="0,0,0,1">
+                            <TextBlock FontWeight="Bold" FontSize="12">
+                                <TextBlock.Text>
+                                    <MultiBinding StringFormat="{}{0} ⇄ {1}">
+                                        <Binding Path="LeftFilePath"/>
+                                        <Binding Path="RightFilePath"/>
+                                    </MultiBinding>
+                                </TextBlock.Text>
+                            </TextBlock>
+                        </Border>
+                        
+                        <Border Grid.Row="1" BorderBrush="#DEE2E6" BorderThickness="1">
+                            <avalonedit:TextEditor Name="InlineTextEditor"
+                                                   FontFamily="Consolas"
+                                                   FontSize="12"
+                                                   IsReadOnly="True"
+                                                   ShowLineNumbers="{Binding ShowLineNumbers}"
+                                                   WordWrap="False"
+                                                   VerticalScrollBarVisibility="Auto"
+                                                   HorizontalScrollBarVisibility="Auto"/>
+                        </Border>
+                    </Grid>
+                </TabItem>
+
+                <!-- Unified View -->
+                <TabItem Header="統合">
+                    <Grid Name="UnifiedGrid">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        
+                        <Border Grid.Row="0" Background="#E9ECEF" Padding="8,4">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="統計: " FontWeight="Bold"/>
+                                <TextBlock Text="{Binding DiffStatistics}" Margin="5,0"/>
+                            </StackPanel>
+                        </Border>
+                        
+                        <Border Grid.Row="1" BorderBrush="#DEE2E6" BorderThickness="1">
+                            <avalonedit:TextEditor Name="UnifiedTextEditor"
+                                                   FontFamily="Consolas"
+                                                   FontSize="12"
+                                                   IsReadOnly="True"
+                                                   ShowLineNumbers="{Binding ShowLineNumbers}"
+                                                   WordWrap="False"
+                                                   VerticalScrollBarVisibility="Auto"
+                                                   HorizontalScrollBarVisibility="Auto"/>
+                        </Border>
+                    </Grid>
+                </TabItem>
+            </TabControl>
+        </Grid>
+
+        <!-- Status Bar -->
+        <Border Grid.Row="2" Style="{StaticResource DiffStatusStyle}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                
+                <TextBlock Grid.Column="0" Text="{Binding StatusMessage}" 
+                           VerticalAlignment="Center"/>
+                
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="左側シンタックス: " Margin="10,0,5,0"/>
+                    <TextBlock Text="{Binding LeftSyntaxHighlighting}" FontWeight="Bold" Margin="0,0,15,0"/>
+                    <TextBlock Text="右側シンタックス: " Margin="0,0,5,0"/>
+                    <TextBlock Text="{Binding RightSyntaxHighlighting}" FontWeight="Bold"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>
