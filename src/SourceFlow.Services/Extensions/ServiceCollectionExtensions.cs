@@ -6,6 +6,7 @@ using SourceFlow.Services.Comparison;
 using SourceFlow.Services.Database;
 using SourceFlow.Services.Settings;
 using SourceFlow.Services.Release;
+using SourceFlow.Services.Notification;
 
 namespace SourceFlow.Services.Extensions;
 
@@ -19,6 +20,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IDatabaseService, DatabaseService>();
         services.AddSingleton<IApplicationSettingsService, ApplicationSettingsService>();
         services.AddScoped<IReleaseService, ReleaseService>();
+        services.AddScoped<INotificationService, NotificationService>();
         
         return services;
     }

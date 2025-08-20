@@ -12,6 +12,7 @@ public class SourceFlowDbContext : DbContext
     public DbSet<FileHistoryEntity> FileHistory { get; set; }
     public DbSet<SyncJobEntity> SyncJobs { get; set; }
     public DbSet<ReleaseHistoryEntity> ReleaseHistory { get; set; }
+    public DbSet<NotificationHistoryEntity> NotificationHistory { get; set; }
     
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -36,5 +37,18 @@ public class SourceFlowDbContext : DbContext
         modelBuilder.Entity<ReleaseHistoryEntity>()
             .HasIndex(e => e.ReleaseDate)
             .HasDatabaseName("IX_ReleaseHistory_ReleaseDate");
+            
+        // NotificationHistory インデックス
+        modelBuilder.Entity<NotificationHistoryEntity>()
+            .HasIndex(e => e.CreatedAt)
+            .HasDatabaseName("IX_NotificationHistory_CreatedAt");
+            
+        modelBuilder.Entity<NotificationHistoryEntity>()
+            .HasIndex(e => e.IsRead)
+            .HasDatabaseName("IX_NotificationHistory_IsRead");
+            
+        modelBuilder.Entity<NotificationHistoryEntity>()
+            .HasIndex(e => e.Type)
+            .HasDatabaseName("IX_NotificationHistory_Type");
     }
 }
