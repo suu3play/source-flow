@@ -37,6 +37,9 @@ public partial class App : Application
                 
                 // ViewModels
                 services.AddTransient<MainWindowViewModel>();
+                services.AddTransient<ReleaseManagerViewModel>();
+                services.AddTransient<SettingsViewModel>();
+                services.AddTransient<DashboardViewModel>();
                 
                 // Views (必要に応じて)
                 services.AddTransient<MainWindow>();

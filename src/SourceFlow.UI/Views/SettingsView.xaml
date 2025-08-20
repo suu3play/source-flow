@@ -212,6 +212,71 @@
                         <CheckBox Grid.Row="3" Grid.Column="1" IsChecked="{Binding EnableAnimations}" Content="UIアニメーションを有効にする"/>
                     </Grid>
                 </GroupBox>
+
+                <!-- 通知設定 -->
+                <GroupBox Header="通知設定">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="デスクトップ通知:" Style="{StaticResource SettingLabel}"/>
+                        <CheckBox Grid.Row="0" Grid.Column="1" IsChecked="{Binding EnableDesktopNotifications}" Content="デスクトップ通知を有効にする"/>
+
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="音声通知:" Style="{StaticResource SettingLabel}"/>
+                        <CheckBox Grid.Row="1" Grid.Column="1" IsChecked="{Binding EnableSoundNotifications}" Content="通知音を有効にする"/>
+
+                        <Separator Grid.Row="2" Grid.ColumnSpan="2" Margin="0,10"/>
+
+                        <TextBlock Grid.Row="3" Grid.Column="0" Text="リリース完了通知:" Style="{StaticResource SettingLabel}"/>
+                        <CheckBox Grid.Row="3" Grid.Column="1" IsChecked="{Binding ShowReleaseCompletedNotifications}" Content="リリース完了時に通知する"/>
+
+                        <TextBlock Grid.Row="4" Grid.Column="0" Text="リリースエラー通知:" Style="{StaticResource SettingLabel}"/>
+                        <CheckBox Grid.Row="4" Grid.Column="1" IsChecked="{Binding ShowReleaseErrorNotifications}" Content="リリースエラー時に通知する"/>
+
+                        <TextBlock Grid.Row="5" Grid.Column="0" Text="同期完了通知:" Style="{StaticResource SettingLabel}"/>
+                        <CheckBox Grid.Row="5" Grid.Column="1" IsChecked="{Binding ShowSyncCompletedNotifications}" Content="同期完了時に通知する"/>
+
+                        <TextBlock Grid.Row="6" Grid.Column="0" Text="同期エラー通知:" Style="{StaticResource SettingLabel}"/>
+                        <CheckBox Grid.Row="6" Grid.Column="1" IsChecked="{Binding ShowSyncErrorNotifications}" Content="同期エラー時に通知する"/>
+
+                        <TextBlock Grid.Row="7" Grid.Column="0" Text="情報通知:" Style="{StaticResource SettingLabel}"/>
+                        <CheckBox Grid.Row="7" Grid.Column="1" IsChecked="{Binding ShowInfoNotifications}" Content="情報通知を表示する"/>
+
+                        <TextBlock Grid.Row="8" Grid.Column="0" Text="警告通知:" Style="{StaticResource SettingLabel}"/>
+                        <CheckBox Grid.Row="8" Grid.Column="1" IsChecked="{Binding ShowWarningNotifications}" Content="警告通知を表示する"/>
+
+                        <Separator Grid.Row="9" Grid.ColumnSpan="2" Margin="0,10"/>
+
+                        <TextBlock Grid.Row="10" Grid.Column="0" Text="表示時間 (秒):" Style="{StaticResource SettingLabel}"/>
+                        <StackPanel Grid.Row="10" Grid.Column="1" Orientation="Horizontal">
+                            <TextBox Text="{Binding NotificationDurationSeconds}" Width="60"/>
+                            <TextBlock Text="秒間表示" VerticalAlignment="Center" Margin="5,0"/>
+                        </StackPanel>
+
+                        <TextBlock Grid.Row="11" Grid.Column="0" Text="音量:" Style="{StaticResource SettingLabel}"/>
+                        <StackPanel Grid.Row="11" Grid.Column="1" Orientation="Horizontal">
+                            <Slider Value="{Binding SoundVolume}" Minimum="0" Maximum="100" Width="150" 
+                                   IsEnabled="{Binding EnableSoundNotifications}"/>
+                            <TextBlock Text="{Binding SoundVolume, StringFormat={}{0}%}" VerticalAlignment="Center" Margin="10,0" MinWidth="40"/>
+                        </StackPanel>
+                    </Grid>
+                </GroupBox>
             </StackPanel>
         </ScrollViewer>
 

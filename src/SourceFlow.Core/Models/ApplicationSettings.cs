@@ -18,6 +18,9 @@ public class ApplicationSettings
     
     // UI設定
     public UiSettings UI { get; set; } = new();
+    
+    // 通知設定
+    public NotificationSettings Notifications { get; set; } = new();
 }
 
 public class GeneralSettings
@@ -72,4 +75,37 @@ public class WindowState
     public double Left { get; set; } = 100;
     public double Top { get; set; } = 100;
     public bool IsMaximized { get; set; } = false;
+}
+
+public class NotificationSettings
+{
+    // 基本通知設定
+    public bool EnableDesktopNotifications { get; set; } = true;
+    public bool EnableSoundNotifications { get; set; } = true;
+    public int NotificationDurationSeconds { get; set; } = 5;
+    
+    // 通知タイプ別設定
+    public bool ShowReleaseCompletedNotifications { get; set; } = true;
+    public bool ShowReleaseErrorNotifications { get; set; } = true;
+    public bool ShowSyncCompletedNotifications { get; set; } = true;
+    public bool ShowSyncErrorNotifications { get; set; } = true;
+    public bool ShowInfoNotifications { get; set; } = true;
+    public bool ShowWarningNotifications { get; set; } = true;
+    
+    // 音声設定
+    public string SuccessSoundFile { get; set; } = ""; // 空文字はシステム標準音
+    public string ErrorSoundFile { get; set; } = "";
+    public string InfoSoundFile { get; set; } = "";
+    public string WarningSoundFile { get; set; } = "";
+    public int SoundVolume { get; set; } = 80; // 0-100
+    
+    // 履歴設定
+    public bool SaveNotificationHistory { get; set; } = true;
+    public int MaxHistoryDays { get; set; } = 30;
+    public int MaxHistoryCount { get; set; } = 1000;
+    
+    // 表示設定
+    public string NotificationPosition { get; set; } = "BottomRight"; // TopLeft, TopRight, BottomLeft, BottomRight
+    public bool ShowNotificationInTaskbar { get; set; } = true;
+    public bool AutoClearReadNotifications { get; set; } = false;
 }

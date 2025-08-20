@@ -24,15 +24,18 @@ public class ReleaseService : IReleaseService
     private readonly ILogger<ReleaseService> _logger;
     private readonly IComparisonService _comparisonService;
     private readonly SourceFlowDbContext _context;
+    private readonly INotificationService _notificationService;
 
     public ReleaseService(
         ILogger<ReleaseService> logger,
         IComparisonService comparisonService,
-        SourceFlowDbContext context)
+        SourceFlowDbContext context,
+        INotificationService notificationService)
     {
         _logger = logger;
         _comparisonService = comparisonService;
         _context = context;
+        _notificationService = notificationService;
     }
 
     public async Task<ReleaseResult> CreateReleaseAsync(ReleaseConfiguration config)
@@ -99,6 +102,18 @@ public class ReleaseService : IReleaseService
 
             _logger.LogInformation("リリース完了: {ReleaseName}, 処理ファイル数: {Count}, エラー数: {Errors}", 
                 config.ReleaseName, processedFiles, errors.Count);
+
+            // 通知を送信
+            if (result.Success)
+            {
+                await _notificationService.ShowReleaseCompletedNotificationAsync(
+                    config.ReleaseName, processedFiles, result.Duration);
+            }
+            else
+            {
+                await _notificationService.ShowReleaseErrorNotificationAsync(
+                    config.ReleaseName, result.ErrorMessage, errors.Count);
+            }
         }
         catch (Exception ex)
         {
@@ -106,6 +121,10 @@ public class ReleaseService : IReleaseService
             result.ErrorMessage = ex.Message;
             result.EndTime = DateTime.Now;
             _logger.LogError(ex, "リリース作成に失敗しました: {ReleaseName}", config.ReleaseName);
+
+            // エラー通知を送信
+            await _notificationService.ShowReleaseErrorNotificationAsync(
+                config.ReleaseName, ex.Message, 1);
         }
 
         return result;

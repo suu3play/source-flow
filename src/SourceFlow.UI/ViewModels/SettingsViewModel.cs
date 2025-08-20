@@ -65,6 +65,10 @@ public class SettingsViewModel : ViewModelBase
                 OnPropertyChanged(nameof(RestoreWindowState));
                 OnPropertyChanged(nameof(ShowStatusBar));
                 OnPropertyChanged(nameof(EnableAnimations));
+                OnPropertyChanged(nameof(EnableDesktopNotifications));
+                OnPropertyChanged(nameof(EnableSoundNotifications));
+                OnPropertyChanged(nameof(ShowReleaseCompletedNotifications));
+                OnPropertyChanged(nameof(ShowReleaseErrorNotifications));
             }
         }
     }
@@ -191,6 +195,67 @@ public class SettingsViewModel : ViewModelBase
     {
         get => Settings.UI.EnableAnimations;
         set { Settings.UI.EnableAnimations = value; MarkDirty(); OnPropertyChanged(); }
+    }
+
+    // 通知設定
+    public bool EnableDesktopNotifications
+    {
+        get => Settings.Notifications.EnableDesktopNotifications;
+        set { Settings.Notifications.EnableDesktopNotifications = value; MarkDirty(); OnPropertyChanged(); }
+    }
+
+    public bool EnableSoundNotifications
+    {
+        get => Settings.Notifications.EnableSoundNotifications;
+        set { Settings.Notifications.EnableSoundNotifications = value; MarkDirty(); OnPropertyChanged(); }
+    }
+
+    public bool ShowReleaseCompletedNotifications
+    {
+        get => Settings.Notifications.ShowReleaseCompletedNotifications;
+        set { Settings.Notifications.ShowReleaseCompletedNotifications = value; MarkDirty(); OnPropertyChanged(); }
+    }
+
+    public bool ShowReleaseErrorNotifications
+    {
+        get => Settings.Notifications.ShowReleaseErrorNotifications;
+        set { Settings.Notifications.ShowReleaseErrorNotifications = value; MarkDirty(); OnPropertyChanged(); }
+    }
+
+    public bool ShowSyncCompletedNotifications
+    {
+        get => Settings.Notifications.ShowSyncCompletedNotifications;
+        set { Settings.Notifications.ShowSyncCompletedNotifications = value; MarkDirty(); OnPropertyChanged(); }
+    }
+
+    public bool ShowSyncErrorNotifications
+    {
+        get => Settings.Notifications.ShowSyncErrorNotifications;
+        set { Settings.Notifications.ShowSyncErrorNotifications = value; MarkDirty(); OnPropertyChanged(); }
+    }
+
+    public bool ShowInfoNotifications
+    {
+        get => Settings.Notifications.ShowInfoNotifications;
+        set { Settings.Notifications.ShowInfoNotifications = value; MarkDirty(); OnPropertyChanged(); }
+    }
+
+    public bool ShowWarningNotifications
+    {
+        get => Settings.Notifications.ShowWarningNotifications;
+        set { Settings.Notifications.ShowWarningNotifications = value; MarkDirty(); OnPropertyChanged(); }
+    }
+
+    public int NotificationDurationSeconds
+    {
+        get => Settings.Notifications.NotificationDurationSeconds;
+        set { Settings.Notifications.NotificationDurationSeconds = value; MarkDirty(); OnPropertyChanged(); }
+    }
+
+    public int SoundVolume
+    {
+        get => Settings.Notifications.SoundVolume;
+        set { Settings.Notifications.SoundVolume = value; MarkDirty(); OnPropertyChanged(); }
     }
 
     // その他のプロパティ
