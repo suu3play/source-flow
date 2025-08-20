@@ -88,8 +88,14 @@ public class DiffViewService : IDiffViewService
                         {
                             LineNumber = line.LineNumber,
                             CharIndex = index,
+                            StartIndex = index,
                             Length = searchText.Length,
-                            IsLeftSide = true
+                            MatchedText = searchText,
+                            ContextLine = line.Content,
+                            FileType = FileType.Left,
+                            ChangeType = line.ChangeType,
+                            CharacterPosition = index,
+                            FilePath = diffResult.LeftFilePath
                         });
                         index += searchText.Length;
                     }
@@ -105,8 +111,14 @@ public class DiffViewService : IDiffViewService
                         {
                             LineNumber = line.LineNumber,
                             CharIndex = index,
+                            StartIndex = index,
                             Length = searchText.Length,
-                            IsLeftSide = false
+                            MatchedText = searchText,
+                            ContextLine = line.Content,
+                            FileType = FileType.Right,
+                            ChangeType = line.ChangeType,
+                            CharacterPosition = index,
+                            FilePath = diffResult.RightFilePath
                         });
                         index += searchText.Length;
                     }
@@ -114,15 +126,121 @@ public class DiffViewService : IDiffViewService
             });
 
             _logger.Info("差分内検索完了: {ResultCount}件の結果", results.Count);
-            return results.OrderBy(r => r.IsLeftSide ? 0 : 1)
+            return results.OrderBy(r => r.FileType == FileType.Left ? 0 : 1)
                          .ThenBy(r => r.LineNumber)
-                         .ThenBy(r => r.CharIndex)
+                         .ThenBy(r => r.StartIndex)
                          .ToList();
         }
         catch (Exception ex)
         {
             _logger.Error(ex, "差分内検索に失敗しました");
             throw;
+        }
+    }
+
+    public async Task<ReplaceResult> ReplaceInDiffAsync(FileDiffResult diffResult, string searchText, string replaceText, bool caseSensitive = false, bool replaceAll = false)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(searchText))
+                return new ReplaceResult { IsSuccess = false, ErrorMessage = "検索テキストが空です" };
+
+            _logger.Info("差分内置換開始: '{SearchText}' -> '{ReplaceText}', CaseSensitive={CaseSensitive}, ReplaceAll={ReplaceAll}", 
+                searchText, replaceText, caseSensitive, replaceAll);
+
+            var result = new ReplaceResult { IsSuccess = true };
+            var comparison = caseSensitive ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase;
+
+            await Task.Run(() =>
+            {
+                // 左側の置換
+                foreach (var line in diffResult.LeftLines)
+                {
+                    var originalContent = line.Content;
+                    var newContent = originalContent;
+                    var currentIndex = 0;
+                    var replacedInLine = 0;
+
+                    while ((currentIndex = newContent.IndexOf(searchText, currentIndex, comparison)) != -1)
+                    {
+                        result.Matches.Add(new ReplaceMatch
+                        {
+                            LineNumber = line.LineNumber,
+                            StartIndex = currentIndex,
+                            Length = searchText.Length,
+                            OriginalText = searchText,
+                            ReplacedText = replaceText,
+                            FileType = FileType.Left
+                        });
+
+                        newContent = newContent.Remove(currentIndex, searchText.Length).Insert(currentIndex, replaceText);
+                        currentIndex += replaceText.Length;
+                        replacedInLine++;
+                        result.ReplacedCount++;
+
+                        if (!replaceAll) break;
+                    }
+
+                    if (replacedInLine > 0)
+                    {
+                        line.Content = newContent;
+                        if (line.ChangeType == ChangeType.NoChange)
+                        {
+                            line.ChangeType = ChangeType.Modify;
+                        }
+                    }
+                }
+
+                // 右側の置換
+                foreach (var line in diffResult.RightLines)
+                {
+                    var originalContent = line.Content;
+                    var newContent = originalContent;
+                    var currentIndex = 0;
+                    var replacedInLine = 0;
+
+                    while ((currentIndex = newContent.IndexOf(searchText, currentIndex, comparison)) != -1)
+                    {
+                        result.Matches.Add(new ReplaceMatch
+                        {
+                            LineNumber = line.LineNumber,
+                            StartIndex = currentIndex,
+                            Length = searchText.Length,
+                            OriginalText = searchText,
+                            ReplacedText = replaceText,
+                            FileType = FileType.Right
+                        });
+
+                        newContent = newContent.Remove(currentIndex, searchText.Length).Insert(currentIndex, replaceText);
+                        currentIndex += replaceText.Length;
+                        replacedInLine++;
+                        result.ReplacedCount++;
+
+                        if (!replaceAll) break;
+                    }
+
+                    if (replacedInLine > 0)
+                    {
+                        line.Content = newContent;
+                        if (line.ChangeType == ChangeType.NoChange)
+                        {
+                            line.ChangeType = ChangeType.Modify;
+                        }
+                    }
+                }
+            });
+
+            _logger.Info("差分内置換完了: {ReplacedCount}件の置換", result.ReplacedCount);
+            return result;
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "差分内置換に失敗しました");
+            return new ReplaceResult 
+            { 
+                IsSuccess = false, 
+                ErrorMessage = ex.Message 
+            };
         }
     }
 

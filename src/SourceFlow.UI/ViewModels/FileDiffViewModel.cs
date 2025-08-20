@@ -2,6 +2,7 @@ using SourceFlow.Core.Interfaces;
 using SourceFlow.Core.Models;
 using SourceFlow.Core.Enums;
 using SourceFlow.UI.Commands;
+using SourceFlow.UI.Services;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
@@ -22,12 +23,14 @@ public class FileDiffViewModel : INotifyPropertyChanged
     private bool _showLineNumbers = true;
     private bool _showWhitespace = false;
     private string _searchText = string.Empty;
+    private string _replaceText = string.Empty;
     private bool _isCaseSensitive = false;
     private bool _isLoading = false;
     private string _statusMessage = string.Empty;
     private string _leftSyntaxHighlighting = "Text";
     private string _rightSyntaxHighlighting = "Text";
     private int _currentSearchIndex = -1;
+    private string _currentTheme = "Default";
 
     public FileDiffViewModel(IDiffViewService diffViewService, ISyntaxHighlightingService syntaxHighlightingService)
     {
@@ -40,8 +43,11 @@ public class FileDiffViewModel : INotifyPropertyChanged
         SearchCommand = new RelayCommand(async () => await SearchAsync());
         NextSearchResultCommand = new RelayCommand(NextSearchResult, () => SearchResults?.Any() == true);
         PreviousSearchResultCommand = new RelayCommand(PreviousSearchResult, () => SearchResults?.Any() == true);
+        ReplaceCommand = new RelayCommand(async () => await ReplaceAsync(), () => DiffResult != null && !string.IsNullOrWhiteSpace(SearchText) && !string.IsNullOrWhiteSpace(ReplaceText));
+        ReplaceAllCommand = new RelayCommand(async () => await ReplaceAllAsync(), () => DiffResult != null && !string.IsNullOrWhiteSpace(SearchText) && !string.IsNullOrWhiteSpace(ReplaceText));
         ExportCommand = new RelayCommand<string?>(async path => await ExportAsync(path ?? string.Empty), path => DiffResult != null && !string.IsNullOrEmpty(path));
         RefreshCommand = new RelayCommand(async () => await RefreshAsync(), () => !string.IsNullOrEmpty(LeftFilePath) && !string.IsNullOrEmpty(RightFilePath));
+        ChangeThemeCommand = new RelayCommand<string>(theme => ChangeTheme(theme ?? "Default"));
 
         SearchResults = new ObservableCollection<SearchResult>();
         AvailableViewModes = new ObservableCollection<DiffViewMode>
@@ -49,6 +55,12 @@ public class FileDiffViewModel : INotifyPropertyChanged
             DiffViewMode.SideBySide,
             DiffViewMode.Inline,
             DiffViewMode.Unified
+        };
+
+        AvailableThemes = new ObservableCollection<string>
+        {
+            "Default",
+            "Dark"
         };
     }
 
@@ -102,6 +114,16 @@ public class FileDiffViewModel : INotifyPropertyChanged
         set
         {
             _searchText = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public string ReplaceText
+    {
+        get => _replaceText;
+        set
+        {
+            _replaceText = value;
             OnPropertyChanged();
         }
     }
@@ -167,6 +189,16 @@ public class FileDiffViewModel : INotifyPropertyChanged
         }
     }
 
+    public string CurrentTheme
+    {
+        get => _currentTheme;
+        private set
+        {
+            _currentTheme = value;
+            OnPropertyChanged();
+        }
+    }
+
     public string LeftFilePath { get; private set; } = string.Empty;
     public string RightFilePath { get; private set; } = string.Empty;
 
@@ -198,6 +230,7 @@ public class FileDiffViewModel : INotifyPropertyChanged
 
     public ObservableCollection<SearchResult> SearchResults { get; }
     public ObservableCollection<DiffViewMode> AvailableViewModes { get; }
+    public ObservableCollection<string> AvailableThemes { get; }
 
     // Commands
     public ICommand LoadFilesCommand { get; }
@@ -205,8 +238,11 @@ public class FileDiffViewModel : INotifyPropertyChanged
     public ICommand SearchCommand { get; }
     public ICommand NextSearchResultCommand { get; }
     public ICommand PreviousSearchResultCommand { get; }
+    public ICommand ReplaceCommand { get; }
+    public ICommand ReplaceAllCommand { get; }
     public ICommand ExportCommand { get; }
     public ICommand RefreshCommand { get; }
+    public ICommand ChangeThemeCommand { get; }
 
     public async Task LoadFilesAsync(string leftPath, string rightPath)
     {
@@ -336,6 +372,106 @@ public class FileDiffViewModel : INotifyPropertyChanged
         }
     }
 
+    public async Task ReplaceAsync()
+    {
+        if (DiffResult == null || string.IsNullOrWhiteSpace(SearchText) || string.IsNullOrWhiteSpace(ReplaceText))
+            return;
+
+        try
+        {
+            IsLoading = true;
+            StatusMessage = "置換中...";
+
+            var result = await _diffViewService.ReplaceInDiffAsync(DiffResult, SearchText, ReplaceText, IsCaseSensitive, false);
+            
+            if (result.IsSuccess)
+            {
+                StatusMessage = $"置換完了: {result.ReplacedCount}件の置換";
+                
+                // 差分結果を更新してビューに反映
+                OnPropertyChanged(nameof(DiffResult));
+                
+                // 検索結果をクリア（置換によって位置が変わるため）
+                SearchResults.Clear();
+                CurrentSearchIndex = -1;
+                
+                _logger.Info("置換完了: SearchText={SearchText}, ReplaceText={ReplaceText}, Count={Count}", 
+                    SearchText, ReplaceText, result.ReplacedCount);
+            }
+            else
+            {
+                StatusMessage = $"置換エラー: {result.ErrorMessage}";
+                MessageBox.Show($"置換に失敗しました:\n{result.ErrorMessage}", "置換エラー", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "置換処理に失敗しました");
+            StatusMessage = $"置換エラー: {ex.Message}";
+            MessageBox.Show($"置換処理に失敗しました:\n{ex.Message}", "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    public async Task ReplaceAllAsync()
+    {
+        if (DiffResult == null || string.IsNullOrWhiteSpace(SearchText) || string.IsNullOrWhiteSpace(ReplaceText))
+            return;
+
+        var confirmResult = MessageBox.Show(
+            $"すべての「{SearchText}」を「{ReplaceText}」に置換しますか？",
+            "全置換の確認",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Question);
+
+        if (confirmResult != MessageBoxResult.Yes)
+            return;
+
+        try
+        {
+            IsLoading = true;
+            StatusMessage = "全置換中...";
+
+            var result = await _diffViewService.ReplaceInDiffAsync(DiffResult, SearchText, ReplaceText, IsCaseSensitive, true);
+            
+            if (result.IsSuccess)
+            {
+                StatusMessage = $"全置換完了: {result.ReplacedCount}件の置換";
+                
+                // 差分結果を更新してビューに反映
+                OnPropertyChanged(nameof(DiffResult));
+                
+                // 検索結果をクリア（置換によって位置が変わるため）
+                SearchResults.Clear();
+                CurrentSearchIndex = -1;
+                
+                MessageBox.Show($"全置換が完了しました:\n{result.ReplacedCount}件の置換を行いました", 
+                    "全置換完了", MessageBoxButton.OK, MessageBoxImage.Information);
+                
+                _logger.Info("全置換完了: SearchText={SearchText}, ReplaceText={ReplaceText}, Count={Count}", 
+                    SearchText, ReplaceText, result.ReplacedCount);
+            }
+            else
+            {
+                StatusMessage = $"全置換エラー: {result.ErrorMessage}";
+                MessageBox.Show($"全置換に失敗しました:\n{result.ErrorMessage}", "全置換エラー", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "全置換処理に失敗しました");
+            StatusMessage = $"全置換エラー: {ex.Message}";
+            MessageBox.Show($"全置換処理に失敗しました:\n{ex.Message}", "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
     public async Task ExportAsync(string filePath)
     {
         if (DiffResult == null) return;
@@ -367,6 +503,18 @@ public class FileDiffViewModel : INotifyPropertyChanged
         if (!string.IsNullOrEmpty(LeftFilePath) && !string.IsNullOrEmpty(RightFilePath))
         {
             await LoadFilesAsync(LeftFilePath, RightFilePath);
+        }
+    }
+
+    public void ChangeTheme(string themeName)
+    {
+        CurrentTheme = themeName;
+        _logger.Info("テーマ変更: {ThemeName}", themeName);
+        
+        // DiffResultがある場合、再描画をトリガー
+        if (DiffResult != null)
+        {
+            OnPropertyChanged(nameof(DiffResult));
         }
     }
 

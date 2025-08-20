@@ -1,6 +1,7 @@
 using SourceFlow.UI.ViewModels;
 using SourceFlow.Core.Models;
 using SourceFlow.Core.Enums;
+using SourceFlow.UI.Highlighting;
 using System.Windows;
 using System.Windows.Controls;
 using System.ComponentModel;
@@ -62,6 +63,9 @@ public partial class FileDiffView : UserControl
                 break;
             case nameof(FileDiffViewModel.CurrentSearchIndex):
                 NavigateToSearchResult();
+                break;
+            case nameof(FileDiffViewModel.CurrentTheme):
+                UpdateDiffDisplay(); // テーマ変更時に再描画
                 break;
         }
     }
@@ -186,11 +190,18 @@ public partial class FileDiffView : UserControl
 
         try
         {
-            // 左側エディターの行の色付け
-            ApplyLineColoring(LeftTextEditor, ViewModel.DiffResult.LeftLines);
+            // テーマに応じたカラースキーム決定
+            var colorScheme = ViewModel.CurrentTheme switch
+            {
+                "Dark" => DiffColorScheme.Dark,
+                _ => DiffColorScheme.Default
+            };
+
+            // 左側エディターの高度な色付け
+            ApplyAdvancedDiffColoring(LeftTextEditor, ViewModel.DiffResult.LeftLines, colorScheme);
             
-            // 右側エディターの行の色付け  
-            ApplyLineColoring(RightTextEditor, ViewModel.DiffResult.RightLines);
+            // 右側エディターの高度な色付け  
+            ApplyAdvancedDiffColoring(RightTextEditor, ViewModel.DiffResult.RightLines, colorScheme);
             
             // インライン・統合エディターの色付け
             ApplyInlineDiffColoring();
@@ -223,6 +234,28 @@ public partial class FileDiffView : UserControl
             
             // Note: 実際の背景色適用はAvalonEditのTransformationインターフェースを使用
             // ここでは簡易実装のプレースホルダー
+        }
+    }
+
+    private void ApplyAdvancedDiffColoring(TextEditor editor, List<LineDiff> lines, DiffColorScheme colorScheme)
+    {
+        try
+        {
+            // 既存のTransformationを削除
+            editor.TextArea.TextView.LineTransformers.Clear();
+            
+            // 新しいDiffLineTransformationを追加
+            var diffTransformation = new DiffLineTransformation(lines, colorScheme);
+            editor.TextArea.TextView.LineTransformers.Add(diffTransformation);
+            
+            // TextAreaを再描画
+            editor.TextArea.TextView.Redraw();
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"高度な差分色付けに失敗: {ex.Message}");
+            // フォールバックとして簡易色付けを使用
+            ApplyLineColoring(editor, lines);
         }
     }
 
@@ -267,7 +300,7 @@ public partial class FileDiffView : UserControl
         try
         {
             var currentResult = ViewModel.SearchResults[ViewModel.CurrentSearchIndex];
-            var editor = currentResult.IsLeftSide ? LeftTextEditor : RightTextEditor;
+            var editor = currentResult.FileType == FileType.Left ? LeftTextEditor : RightTextEditor;
             
             // 該当行にスクロール・ハイライト
             if (currentResult.LineNumber <= editor.Document.LineCount)
@@ -327,6 +360,14 @@ public partial class FileDiffView : UserControl
         else
         {
             e.Effects = DragDropEffects.None;
+        }
+    }
+
+    private void ThemeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (sender is ComboBox comboBox && comboBox.SelectedItem is string selectedTheme)
+        {
+            ViewModel?.ChangeThemeCommand.Execute(selectedTheme);
         }
     }
 }

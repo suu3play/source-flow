@@ -14,6 +14,10 @@
     <PackageReference Include="System.Text.Json" Version="9.0.8" />
   </ItemGroup>
 
+  <ItemGroup>
+    <EmbeddedResource Include="Highlighting\DiffHighlighting.xshd" />
+  </ItemGroup>
+
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net9.0-windows</TargetFramework>

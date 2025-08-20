@@ -27,8 +27,46 @@ public class SearchResult
 {
     public int LineNumber { get; set; }
     public int CharIndex { get; set; }
+    public int StartIndex { get; set; }
     public int Length { get; set; }
-    public bool IsLeftSide { get; set; }
+    public string MatchedText { get; set; } = string.Empty;
+    public string ContextLine { get; set; } = string.Empty;
+    public FileType FileType { get; set; }
+    public ChangeType ChangeType { get; set; }
+    public int CharacterPosition { get; set; }
+    public string FilePath { get; set; } = string.Empty;
+    
+    [Obsolete("Use FileType instead")]
+    public bool IsLeftSide 
+    { 
+        get => FileType == FileType.Left; 
+        set => FileType = value ? FileType.Left : FileType.Right; 
+    }
+}
+
+public class ReplaceResult
+{
+    public int ReplacedCount { get; set; }
+    public List<ReplaceMatch> Matches { get; set; } = [];
+    public bool IsSuccess { get; set; }
+    public string ErrorMessage { get; set; } = string.Empty;
+}
+
+public class ReplaceMatch
+{
+    public int LineNumber { get; set; }
+    public int StartIndex { get; set; }
+    public int Length { get; set; }
+    public string OriginalText { get; set; } = string.Empty;
+    public string ReplacedText { get; set; } = string.Empty;
+    public FileType FileType { get; set; }
+}
+
+public enum FileType
+{
+    Left,
+    Right,
+    Both
 }
 
 public class ScrollSyncSettings

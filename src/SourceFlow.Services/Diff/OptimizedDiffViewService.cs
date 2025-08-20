@@ -168,7 +168,7 @@ public class OptimizedDiffViewService : IDiffViewService
 
             // 結果をソート
             var sortedResults = results
-                .OrderBy(r => r.IsLeftSide ? 0 : 1)
+                .OrderBy(r => r.FileType == FileType.Left ? 0 : 1)
                 .ThenBy(r => r.LineNumber)
                 .ThenBy(r => r.CharIndex)
                 .ToList();
@@ -184,6 +184,51 @@ public class OptimizedDiffViewService : IDiffViewService
             _logger.Error(ex, "最適化差分検索に失敗しました");
             await _performanceMonitor.StopMonitoringAsync(metrics);
             throw;
+        }
+    }
+
+    public async Task<ReplaceResult> ReplaceInDiffAsync(FileDiffResult diffResult, string searchText, string replaceText, bool caseSensitive = false, bool replaceAll = false)
+    {
+        var metrics = await _performanceMonitor.StartMonitoringAsync($"ReplaceInDiff: {searchText} -> {replaceText}");
+
+        try
+        {
+            if (string.IsNullOrEmpty(searchText))
+                return new ReplaceResult { IsSuccess = false, ErrorMessage = "検索テキストが空です" };
+
+            _logger.Info("最適化差分置換開始: '{SearchText}' -> '{ReplaceText}', CaseSensitive={CaseSensitive}, ReplaceAll={ReplaceAll}", 
+                searchText, replaceText, caseSensitive, replaceAll);
+
+            var result = new ReplaceResult { IsSuccess = true };
+            var comparison = caseSensitive ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase;
+
+            // 並列置換で高速化
+            var leftReplaceTask = Task.Run(() => ReplaceInLinesAsync(diffResult.LeftLines, searchText, replaceText, comparison, FileType.Left, replaceAll));
+            var rightReplaceTask = Task.Run(() => ReplaceInLinesAsync(diffResult.RightLines, searchText, replaceText, comparison, FileType.Right, replaceAll));
+
+            var replaceResults = await Task.WhenAll(leftReplaceTask, rightReplaceTask);
+            
+            foreach (var replaceResultItem in replaceResults)
+            {
+                result.ReplacedCount += replaceResultItem.ReplacedCount;
+                result.Matches.AddRange(replaceResultItem.Matches);
+            }
+
+            metrics.ProcessedItems = result.ReplacedCount;
+            await _performanceMonitor.StopMonitoringAsync(metrics);
+
+            _logger.Info("最適化差分置換完了: {ReplacedCount}件の置換", result.ReplacedCount);
+            return result;
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "最適化差分置換に失敗しました");
+            await _performanceMonitor.StopMonitoringAsync(metrics);
+            return new ReplaceResult 
+            { 
+                IsSuccess = false, 
+                ErrorMessage = ex.Message 
+            };
         }
     }
 
@@ -277,8 +322,14 @@ public class OptimizedDiffViewService : IDiffViewService
                     {
                         LineNumber = line.LineNumber,
                         CharIndex = index,
+                        StartIndex = index,
                         Length = searchText.Length,
-                        IsLeftSide = isLeftSide
+                        MatchedText = searchText,
+                        ContextLine = line.Content,
+                        FileType = isLeftSide ? FileType.Left : FileType.Right,
+                        ChangeType = line.ChangeType,
+                        CharacterPosition = index,
+                        FilePath = ""
                     });
                     index += searchText.Length;
                 }
@@ -396,5 +447,53 @@ public class OptimizedDiffViewService : IDiffViewService
         }
 
         await File.WriteAllTextAsync(outputPath, sb.ToString(), Encoding.UTF8);
+    }
+
+
+    private static Task<ReplaceResult> ReplaceInLinesAsync(List<LineDiff> lines, string searchText, string replaceText, StringComparison comparison, FileType fileType, bool replaceAll)
+    {
+        return Task.Run(() =>
+        {
+            var result = new ReplaceResult { IsSuccess = true };
+            
+            foreach (var line in lines)
+            {
+                var originalContent = line.Content;
+                var newContent = originalContent;
+                var currentIndex = 0;
+                var replacedInLine = 0;
+
+                while ((currentIndex = newContent.IndexOf(searchText, currentIndex, comparison)) != -1)
+                {
+                    result.Matches.Add(new ReplaceMatch
+                    {
+                        LineNumber = line.LineNumber,
+                        StartIndex = currentIndex,
+                        Length = searchText.Length,
+                        OriginalText = searchText,
+                        ReplacedText = replaceText,
+                        FileType = fileType
+                    });
+
+                    newContent = newContent.Remove(currentIndex, searchText.Length).Insert(currentIndex, replaceText);
+                    currentIndex += replaceText.Length;
+                    replacedInLine++;
+                    result.ReplacedCount++;
+
+                    if (!replaceAll) break;
+                }
+
+                if (replacedInLine > 0)
+                {
+                    line.Content = newContent;
+                    if (line.ChangeType == ChangeType.NoChange)
+                    {
+                        line.ChangeType = ChangeType.Modify;
+                    }
+                }
+            }
+            
+            return result;
+        });
     }
 }
