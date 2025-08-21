@@ -13,6 +13,8 @@ public class SourceFlowDbContext : DbContext
     public DbSet<SyncJobEntity> SyncJobs { get; set; }
     public DbSet<ReleaseHistoryEntity> ReleaseHistory { get; set; }
     public DbSet<NotificationHistoryEntity> NotificationHistory { get; set; }
+    public DbSet<ScheduledJobEntity> ScheduledJobs { get; set; }
+    public DbSet<ScheduleExecutionEntity> ScheduleExecutions { get; set; }
     
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -50,5 +52,39 @@ public class SourceFlowDbContext : DbContext
         modelBuilder.Entity<NotificationHistoryEntity>()
             .HasIndex(e => e.Type)
             .HasDatabaseName("IX_NotificationHistory_Type");
+            
+        // ScheduledJobs インデックス
+        modelBuilder.Entity<ScheduledJobEntity>()
+            .HasIndex(e => e.JobName)
+            .IsUnique()
+            .HasDatabaseName("IX_ScheduledJobs_JobName");
+            
+        modelBuilder.Entity<ScheduledJobEntity>()
+            .HasIndex(e => e.IsEnabled)
+            .HasDatabaseName("IX_ScheduledJobs_IsEnabled");
+            
+        modelBuilder.Entity<ScheduledJobEntity>()
+            .HasIndex(e => e.NextExecutionTime)
+            .HasDatabaseName("IX_ScheduledJobs_NextExecutionTime");
+            
+        // ScheduleExecutions インデックス
+        modelBuilder.Entity<ScheduleExecutionEntity>()
+            .HasIndex(e => e.ScheduledJobId)
+            .HasDatabaseName("IX_ScheduleExecutions_ScheduledJobId");
+            
+        modelBuilder.Entity<ScheduleExecutionEntity>()
+            .HasIndex(e => e.StartTime)
+            .HasDatabaseName("IX_ScheduleExecutions_StartTime");
+            
+        modelBuilder.Entity<ScheduleExecutionEntity>()
+            .HasIndex(e => e.Status)
+            .HasDatabaseName("IX_ScheduleExecutions_Status");
+            
+        // ScheduledJobs と ScheduleExecutions の関係
+        modelBuilder.Entity<ScheduleExecutionEntity>()
+            .HasOne(e => e.ScheduledJob)
+            .WithMany(j => j.Executions)
+            .HasForeignKey(e => e.ScheduledJobId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

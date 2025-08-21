@@ -24,6 +24,7 @@ public class MainWindowViewModel : ViewModelBase
     public SourceSyncViewModel SourceSyncViewModel { get; }
     public FileManagerViewModel FileManagerViewModel { get; }
     public ReleaseManagerViewModel ReleaseManagerViewModel { get; }
+    public ScheduleManagerViewModel ScheduleManagerViewModel { get; }
     public SettingsViewModel SettingsViewModel { get; }
     public FileDiffViewModel FileDiffViewModel { get; }
 
@@ -33,6 +34,8 @@ public class MainWindowViewModel : ViewModelBase
         IComparisonService comparisonService,
         IApplicationSettingsService settingsService,
         IReleaseService releaseService,
+        IScheduleService scheduleService,
+        IScheduleJobManager scheduleJobManager,
         IDiffViewService diffViewService,
         ISyntaxHighlightingService syntaxHighlightingService)
     {
@@ -47,6 +50,7 @@ public class MainWindowViewModel : ViewModelBase
         SourceSyncViewModel = new SourceSyncViewModel(_configurationService, _sourceSyncService);
         FileManagerViewModel = new FileManagerViewModel(_configurationService, _comparisonService);
         ReleaseManagerViewModel = new ReleaseManagerViewModel(_comparisonService, _releaseService);
+        ScheduleManagerViewModel = new ScheduleManagerViewModel(scheduleService, scheduleJobManager);
         SettingsViewModel = new SettingsViewModel(_settingsService);
         FileDiffViewModel = new FileDiffViewModel(diffViewService, syntaxHighlightingService);
         
