@@ -7,6 +7,7 @@ using SourceFlow.Services.Database;
 using SourceFlow.Services.Settings;
 using SourceFlow.Services.Release;
 using SourceFlow.Services.Notification;
+using SourceFlow.Services.Diff;
 
 namespace SourceFlow.Services.Extensions;
 
@@ -21,6 +22,16 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IApplicationSettingsService, ApplicationSettingsService>();
         services.AddScoped<IReleaseService, ReleaseService>();
         services.AddScoped<INotificationService, NotificationService>();
+        
+        // Diff services
+        services.AddScoped<ITextDiffEngine, TextDiffEngine>();
+        services.AddScoped<IAdvancedDiffEngine, AdvancedDiffEngine>();
+        services.AddScoped<ISyntaxHighlightingService, SyntaxHighlightingService>();
+        services.AddScoped<IDiffCacheService, DiffCacheService>();
+        services.AddScoped<IPerformanceMonitorService, PerformanceMonitorService>();
+        
+        // 最適化されたサービス（標準サービスを置き換え）
+        services.AddScoped<IDiffViewService, OptimizedDiffViewService>();
         
         return services;
     }

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<SyntaxDefinition name="Diff" xmlns="http://icsharpcode.net/sharpdevelop/syntaxdefinition/2008">
+  <Color name="AddedLine" foreground="#28a745" background="#d4edda" />
+  <Color name="DeletedLine" foreground="#dc3545" background="#f8d7da" />
+  <Color name="ModifiedLine" foreground="#ffc107" background="#fff3cd" />
+  <Color name="ContextLine" foreground="#6c757d" />
+  <Color name="DiffHeader" foreground="#007bff" fontWeight="bold" />
+  <Color name="LineNumber" foreground="#6c757d" background="#f8f9fa" />
+  <Color name="NoChangeBackground" background="#ffffff" />
+  
+  <RuleSet>
+    <!-- Git diff headers -->
+    <Rule color="DiffHeader">
+      ^(diff|index|---|\+\+\+|@@.*@@).*$
+    </Rule>
+    
+    <!-- Added lines -->
+    <Rule color="AddedLine">
+      ^\+.*$
+    </Rule>
+    
+    <!-- Deleted lines -->
+    <Rule color="DeletedLine">
+      ^-.*$
+    </Rule>
+    
+    <!-- Modified lines (custom prefix) -->
+    <Rule color="ModifiedLine">
+      ^~.*$
+    </Rule>
+    
+    <!-- Context lines (no prefix or space prefix) -->
+    <Rule color="ContextLine">
+      ^ .*$
+    </Rule>
+  </RuleSet>
+</SyntaxDefinition>

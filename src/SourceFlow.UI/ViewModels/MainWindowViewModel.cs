@@ -25,13 +25,16 @@ public class MainWindowViewModel : ViewModelBase
     public FileManagerViewModel FileManagerViewModel { get; }
     public ReleaseManagerViewModel ReleaseManagerViewModel { get; }
     public SettingsViewModel SettingsViewModel { get; }
+    public FileDiffViewModel FileDiffViewModel { get; }
 
     public MainWindowViewModel(
         IConfigurationService configurationService,
         ISourceSyncService sourceSyncService,
         IComparisonService comparisonService,
         IApplicationSettingsService settingsService,
-        IReleaseService releaseService)
+        IReleaseService releaseService,
+        IDiffViewService diffViewService,
+        ISyntaxHighlightingService syntaxHighlightingService)
     {
         _configurationService = configurationService;
         _sourceSyncService = sourceSyncService;
@@ -45,6 +48,7 @@ public class MainWindowViewModel : ViewModelBase
         FileManagerViewModel = new FileManagerViewModel(_configurationService, _comparisonService);
         ReleaseManagerViewModel = new ReleaseManagerViewModel(_comparisonService, _releaseService);
         SettingsViewModel = new SettingsViewModel(_settingsService);
+        FileDiffViewModel = new FileDiffViewModel(diffViewService, syntaxHighlightingService);
         
         InitializeCommands();
         LoadDataAsync();
