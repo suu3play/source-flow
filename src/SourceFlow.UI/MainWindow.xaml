@@ -35,8 +35,9 @@
                 <MenuItem Header="ソース取得" InputGestureText="Ctrl+2" Click="NavigateToTab" Tag="1"/>
                 <MenuItem Header="ファイル管理" InputGestureText="Ctrl+3" Click="NavigateToTab" Tag="2"/>
                 <MenuItem Header="比較・リリース" InputGestureText="Ctrl+4" Click="NavigateToTab" Tag="3"/>
-                <MenuItem Header="ファイル差分" InputGestureText="Ctrl+D" Click="NavigateToTab" Tag="5"/>
-                <MenuItem Header="設定" InputGestureText="Ctrl+5" Click="NavigateToTab" Tag="4"/>
+                <MenuItem Header="スケジュール管理" InputGestureText="Ctrl+5" Click="NavigateToTab" Tag="4"/>
+                <MenuItem Header="ファイル差分" InputGestureText="Ctrl+D" Click="NavigateToTab" Tag="6"/>
+                <MenuItem Header="設定" InputGestureText="Ctrl+6" Click="NavigateToTab" Tag="5"/>
             </MenuItem>
             <MenuItem Header="ヘルプ(_H)">
                 <MenuItem Header="バージョン情報(_A)"/>
@@ -59,6 +60,10 @@
             
             <TabItem Header="比較・リリース">
                 <views:ReleaseManagerView DataContext="{Binding ReleaseManagerViewModel}"/>
+            </TabItem>
+            
+            <TabItem Header="スケジュール管理">
+                <views:ScheduleManagerView DataContext="{Binding ScheduleManagerViewModel}"/>
             </TabItem>
             
             <TabItem Header="設定">

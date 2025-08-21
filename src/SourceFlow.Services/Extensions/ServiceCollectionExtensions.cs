@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Quartz;
+using Quartz.Spi;
 using SourceFlow.Core.Interfaces;
 using SourceFlow.Services.Configuration;
 using SourceFlow.Services.Sync;
@@ -52,6 +53,13 @@ public static class ServiceCollectionExtensions
         });
         
         services.AddQuartzHostedService(q => q.WaitForJobsToComplete = true);
+        
+        // ISchedulerを明示的に登録
+        services.AddSingleton<IScheduler>(provider =>
+        {
+            var schedulerFactory = provider.GetRequiredService<ISchedulerFactory>();
+            return schedulerFactory.GetScheduler().GetAwaiter().GetResult();
+        });
         
         // スケジュール関連サービス
         services.AddScoped<IScheduleService, ScheduleService>();

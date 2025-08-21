@@ -34,6 +34,7 @@ public partial class App : Application
                 
                 // アプリケーションサービス
                 services.AddApplicationServices();
+                services.AddScheduleServices();
                 
                 // ViewModels
                 services.AddTransient<MainWindowViewModel>();
